@@ -26,13 +26,14 @@
 
 /**
  * @brief Schedules a process to execution.
- * 
+ *
  * @param proc Process to be scheduled.
  */
 PUBLIC void sched(struct process *proc)
 {
 	proc->state = PROC_READY;
 	proc->counter = 0;
+
 }
 
 /**
@@ -47,13 +48,13 @@ PUBLIC void stop(void)
 
 /**
  * @brief Resumes a process.
- * 
+ *
  * @param proc Process to be resumed.
- * 
+ *
  * @note The process must stopped to be resumed.
  */
 PUBLIC void resume(struct process *proc)
-{	
+{
 	/* Resume only if process has stopped. */
 	if (proc->state == PROC_STOPPED)
 		sched(proc);
@@ -61,6 +62,7 @@ PUBLIC void resume(struct process *proc)
 
 /**
  * @brief Yields the processor.
+ * Round-Robin version
  */
 PUBLIC void yieldOld(void)
 {
@@ -80,7 +82,7 @@ PUBLIC void yieldOld(void)
 		/* Skip invalid processes. */
 		if (!IS_VALID(p))
 			continue;
-		
+
 		/* Alarm has expired. */
 		if ((p->alarm) && (p->alarm < ticks))
 			p->alarm = 0, sndsig(p, SIGALRM);
@@ -93,7 +95,7 @@ PUBLIC void yieldOld(void)
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
-		
+
 		/*
 		 * Process with higher
 		 * waiting time found.
@@ -103,7 +105,7 @@ PUBLIC void yieldOld(void)
 			next->counter++;
 			next = p;
 		}
-			
+
 		/*
 		 * Increment waiting
 		 * time of process.
@@ -111,7 +113,7 @@ PUBLIC void yieldOld(void)
 		else
 			p->counter++;
 	}
-	
+
 	/* Switch to next process. */
 	next->priority = PRIO_USER;
 	next->state = PROC_RUNNING;
@@ -155,15 +157,22 @@ PUBLIC void yield(void)
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
-
+		else {
+				/* If the process is ready, we give it the highest user priority */
+				if (p->priority <= PRIO_SIG) {
+					p->priority = PRIO_USER;
+				}
+		}
 		/*
-		 * Process with higher
-		 * priority found.
+		 * With the use of our coefficients
+		 * 30% Static priority (we assume that our system decide of that priority)
+		 * 30% Nice Priority (chosen by the user)
+		 * 40% Waiting time (allow even the process with the tiniest priority to run)
+		 * We can decide which process should be run next
+		 * Those coefficients can be modify at will
 		 */
-		if (p->priority+p->nice > next->priority+next->nice
-			|| (p->priority+p->nice == next->priority+next->nice && p->counter > next->counter))
+		if (p->priority*0.3+p->nice*0.3+p->counter*0.4 > next->priority*0.3+next->nice*0.3+next->counter*0.4)
 		{
-
 			next = p;
 			next->counter++;
 
@@ -176,14 +185,6 @@ PUBLIC void yield(void)
 
 	}
 
-	/* Switch to next process. */
-	//last_proc->counter = 1 / ((PROC_QUANTUM - last_proc->counter)/PROC_QUANTUM);
-	if (next == IDLE) {
-		next->priority = -100;
-	} else {
-		next->priority = PRIO_USER;
-	}
-
 	next->state = PROC_RUNNING;
 	next->counter = PROC_QUANTUM;
 
@@ -192,3 +193,78 @@ PUBLIC void yield(void)
 		switch_to(next);
 }
 
+
+/*
+* Multiple Queue Scheduler
+* We'll consider that 40 (PRIO_USER) is the highest user priority
+* And 21 (PRIO_SIG + 1) is the lowest
+*/
+PUBLIC void yieldMQ(void) {
+	struct process *p;    /* Working process.     */
+	struct process *next; /* Next process to run. */
+
+	/* If the current process use all his quantum, we'll decrease his
+	priority level by one */
+	if (curr_proc->counter == 0) {
+		if (curr_proc->priority > PRIO_SIG + 1) {
+			curr_proc->priority--;
+		}
+	}
+
+	/* Re-schedule process for execution. */
+	if (curr_proc->state == PROC_RUNNING)
+		sched(curr_proc);
+
+	/* Remember this process. */
+	last_proc = curr_proc;
+
+
+	/* Check alarm. */
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip invalid processes. */
+		if (!IS_VALID(p))
+			continue;
+
+		/* Alarm has expired. */
+		if ((p->alarm) && (p->alarm < ticks))
+			p->alarm = 0, sndsig(p, SIGALRM);
+	}
+
+	/* Choose a process to run next. */
+	next = IDLE;
+	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+	{
+		/* Skip non-ready process. */
+		if (p->state != PROC_READY)
+			continue;
+		else {
+			/* If the process is ready, we give it the highest user priority */
+			if (p->priority <= PRIO_SIG) {
+				p->priority = PRIO_USER;
+			}
+		}
+		/*
+		 * Process with higher
+		 * waiting time and highess priority found
+		 */
+		if (p->priority > next-> priority || (p->priority == next->priority && p->counter > next->counter))
+		{
+			next->counter++;
+			next = p;
+		}
+
+		/*
+		 * Increment waiting
+		 * time of process.
+		 */
+		else
+			p->counter++;
+	}
+
+	/* Switch to next process. */
+	next->state = PROC_RUNNING;
+
+	if (curr_proc != next)
+		switch_to(next);
+}
