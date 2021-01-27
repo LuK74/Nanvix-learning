@@ -144,8 +144,8 @@ PUBLIC void yield(void) {
 	priority level by one */
 
 	if (curr_proc->counter == 0 && curr_proc != IDLE) {
-		if (queue[curr_proc->pid - 1] > 0) {
-			queue[curr_proc->pid - 1]--;
+		if (queue[(curr_proc-FIRST_PROC)] > 0) {
+			queue[(curr_proc-FIRST_PROC)]--;
 		}
 	}
 
@@ -175,13 +175,13 @@ PUBLIC void yield(void) {
 	{
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY) {
-			queue[p->pid - 1] = -1;
+			queue[(p-FIRST_PROC)] = -1;
 			continue;
 		}
 		else {
 			/* If the process is ready, we give it the highest user priority */
-			if (queue[p->pid - 1] == -1) {
-				queue[p->pid - 1] = 7;
+			if (queue[(p-FIRST_PROC)] == -1) {
+				queue[(p-FIRST_PROC)] = 7;
 			}
 		}
 
@@ -190,8 +190,8 @@ PUBLIC void yield(void) {
 		 * waiting time and highess priority found
 		 */
 		if (next != IDLE) {
-			int p_queueRank = queue[p->pid - 1];
-			int n_queueRank = queue[next->pid - 1];
+			int p_queueRank = queue[(p-FIRST_PROC)];
+			int n_queueRank = queue[(next-FIRST_PROC)];
 			if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter))
 			{
 				next->counter++;
