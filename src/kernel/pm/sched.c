@@ -139,7 +139,7 @@ PUBLIC void yield(void) {
 	/* If the current process use all his quantum, we'll decrease his
 	priority level by one */
 
-	if (curr_proc->counter == 0) {
+	if (curr_proc->counter == 0 && curr_proc != IDLE) {
 		if (queue[(curr_proc - FIRST_PROC)/sizeof(void *)] > 0) {
 			queue[(curr_proc - FIRST_PROC)/sizeof(void *)]--;
 		}
@@ -185,11 +185,16 @@ PUBLIC void yield(void) {
 		 * Process with higher
 		 * waiting time and highess priority found
 		 */
+		if (next != IDLE) {
 		int p_queueRank = queue[(p - FIRST_PROC)/sizeof(void *)];
 		int n_queueRank = queue[(next - FIRST_PROC)/sizeof(void *)];
-		if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter) || next == IDLE)
-		{
-			next->counter++;
+			if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter))
+			{
+				next->counter++;
+				next = p;
+			}	else
+					p->counter++;
+		} else {
 			next = p;
 		}
 
@@ -197,8 +202,7 @@ PUBLIC void yield(void) {
 		 * Increment waiting
 		 * time of process.
 		 */
-		else
-			p->counter++;
+
 	}
 
 	/* Switch to next process. */
