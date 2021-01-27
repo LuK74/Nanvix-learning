@@ -37,7 +37,6 @@ PUBLIC void sched(struct process *proc)
 {
 	proc->state = PROC_READY;
 	proc->counter = 0;
-
 }
 
 /**
@@ -142,29 +141,30 @@ PUBLIC void yieldOld(void)
 PUBLIC unsigned int max_tickets = 100000;
 
 // Sum of all tickets hold by our process
-PUBLIC unsigned int current_nb_tickets = 0;
+PUBLIC int current_nb_tickets = 0;
+PUBLIC unsigned int tickets[PROC_MAX];
 
 PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
 
-
 	// Here we randomly give our current process a number of tickets
 	// But his maximal number of tickets will depends on how much
 	// of his quantum it has used
-	if (curr_proc != IDLE) {
-		if (curr_proc->counter == 0) {
-			curr_proc->counter = krand()%(max_tickets - 90000) + 1 ;
-		} else {
-			curr_proc->counter = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 90000) + 1 ;
-		}
-		current_nb_tickets += curr_proc->counter;
-	}
-
 
 	/* Re-schedule process for execution. */
 	if (curr_proc->state == PROC_RUNNING)
 		curr_proc->state = PROC_READY;
+
+
+	if (curr_proc != IDLE) {
+		if (curr_proc->counter == 0) {
+			tickets[curr_proc->pid - 1] = krand()%(max_tickets - 90000) + 1 ;
+		} else {
+			tickets[curr_proc->pid - 1] = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 90000) + 1 ;
+		}
+		current_nb_tickets += tickets[curr_proc->pid - 1];
+	}
 
 	/* Remember this process. */
 	last_proc = curr_proc;
@@ -180,11 +180,14 @@ PUBLIC void yield(void) {
 			continue;
 
 		if (p->state == PROC_READY) {
-				if (p->counter == 0) {
-					p->counter = (krand()%max_tickets/2)+1;
-					current_nb_tickets += p->counter;
+				if (tickets[p->pid - 1] == 0) {
+				 	tickets[p->pid - 1] = (krand()%max_tickets)+1;
+					current_nb_tickets += tickets[p->pid - 1];
 				}
-		}
+		}/* else {
+			current_nb_tickets -= tickets[(p-FIRST_PROC)/sizeof(void *)];
+			tickets[(p-FIRST_PROC)/sizeof(void *)] = 0;
+		}*/
 
 		/* Alarm has expired. */
 		if ((p->alarm) && (p->alarm < ticks))
@@ -204,16 +207,16 @@ PUBLIC void yield(void) {
 		/*
 		 * Process holding the winning ticket will be chosen
 		 */
-		process_ticket += p->counter;
+		process_ticket += tickets[p->pid - 1];
 		if (winner_ticket <= process_ticket) {
 			next = p;
-			current_nb_tickets -= next->counter;
 			break;
 		}
 
 	}
 
 	/* Switch to next process. */
+	current_nb_tickets -= tickets[next->pid - 1];
 	next->state = PROC_RUNNING;
 	next->priority = PRIO_USER;
 	next->counter = PROC_QUANTUM;

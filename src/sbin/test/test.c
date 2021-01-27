@@ -287,7 +287,7 @@ static int sched_test1(void)
 }
 
 /**
- * @brief Scheduling test 1.
+ * @brief Scheduling test 2.
  *
  * @details Spawns several processes and stresses the scheduler.
  *
@@ -647,6 +647,11 @@ int main(int argc, char **argv)
 				(!sched_test1()) ? "PASSED" : "FAILED");
 			printf("  scheduler stress   [%s]\n",
 				(!sched_test2() && !sched_test3()) ? "PASSED" : "FAILED");
+
+			//printf("My Scheduler Test\n");
+			//printf(" visualization concurrency between IO and CPU worker [%s]\n",
+			//	(!my_sched_test0()) ? "PASSED" : "FAILED");
+
 		}
 
 		/* IPC test. */
