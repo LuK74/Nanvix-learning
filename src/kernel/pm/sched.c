@@ -181,7 +181,7 @@ PUBLIC void yield(void) {
 
 		if (p->state == PROC_READY) {
 				if (p->counter == 0) {
-					p->counter = (krand()%max_tickets)+1;
+					p->counter = (krand()%max_tickets/2)+1;
 					current_nb_tickets += p->counter;
 				}
 		}
