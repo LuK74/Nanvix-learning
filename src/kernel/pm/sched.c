@@ -67,7 +67,7 @@ PUBLIC void resume(struct process *proc)
  * @brief Yields the processor.
  * Round-Robin version
  */
-PUBLIC void yield(void)
+PUBLIC void yieldOld(void)
 {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
@@ -144,7 +144,7 @@ PUBLIC unsigned int max_tickets = 100000;
 PUBLIC int current_nb_tickets = 0;
 PUBLIC unsigned int tickets[PROC_MAX];
 
-PUBLIC void yieldOld(void) {
+PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
 
@@ -156,11 +156,11 @@ PUBLIC void yieldOld(void) {
 
 	if (curr_proc != IDLE) {
 		if (curr_proc->counter == 0) {
-			tickets[curr_proc->pid - 1] = krand()%(max_tickets - 90000) + 1 ;
+			tickets[curr_proc - FIRST_PROC] = krand()%(max_tickets - 90000) + 1 ;
 		} else {
-			tickets[curr_proc->pid - 1] = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 90000) + 1 ;
+			tickets[curr_proc - FIRST_PROC] = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 90000) + 1 ;
 		}
-		current_nb_tickets += tickets[curr_proc->pid - 1];
+		current_nb_tickets += tickets[curr_proc - FIRST_PROC];
 	}
 
 	if (curr_proc->state == PROC_RUNNING)
@@ -180,13 +180,13 @@ PUBLIC void yieldOld(void) {
 			continue;
 
 		if (p->state == PROC_READY) {
-				if (tickets[p->pid - 1] == 0) {
-				 	tickets[p->pid - 1] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
-					current_nb_tickets += tickets[p->pid - 1];
+				if (tickets[p - FIRST_PROC] == 0) {
+				 	tickets[p - FIRST_PROC] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
+					current_nb_tickets += tickets[p - FIRST_PROC];
 				}
 		} else {
-			current_nb_tickets -= tickets[p->pid - 1];
-			tickets[p->pid - 1] = 0;
+			current_nb_tickets -= tickets[p - FIRST_PROC];
+			tickets[p - FIRST_PROC] = 0;
 		}
 
 		/* Alarm has expired. */
@@ -210,7 +210,7 @@ PUBLIC void yieldOld(void) {
 		/*
 		 * Process holding the winning ticket will be chosen
 		 */
-		process_ticket += tickets[p->pid - 1];
+		process_ticket += tickets[p - FIRST_PROC];
 		if (winner_ticket <= process_ticket) {
 			next = p;
 			break;
