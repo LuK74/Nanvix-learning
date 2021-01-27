@@ -67,7 +67,7 @@ PUBLIC void resume(struct process *proc)
  * @brief Yields the processor.
  * Round-Robin version
  */
-PUBLIC void yieldOld(void)
+PUBLIC void yield(void)
 {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
@@ -144,7 +144,7 @@ PUBLIC unsigned int max_tickets = 100000;
 PUBLIC int current_nb_tickets = 0;
 PUBLIC unsigned int tickets[PROC_MAX];
 
-PUBLIC void yield(void) {
+PUBLIC void yieldOld(void) {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
 
@@ -153,9 +153,6 @@ PUBLIC void yield(void) {
 	// of his quantum it has used
 
 	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
-		curr_proc->state = PROC_READY;
-
 
 	if (curr_proc != IDLE) {
 		if (curr_proc->counter == 0) {
@@ -165,6 +162,9 @@ PUBLIC void yield(void) {
 		}
 		current_nb_tickets += tickets[curr_proc->pid - 1];
 	}
+
+	if (curr_proc->state == PROC_RUNNING)
+		sched(curr_proc);
 
 	/* Remember this process. */
 	last_proc = curr_proc;
@@ -181,11 +181,10 @@ PUBLIC void yield(void) {
 
 		if (p->state == PROC_READY) {
 				if (tickets[p->pid - 1] == 0) {
-				 	tickets[p->pid - 1] = (krand()%max_tickets)+1;
+				 	tickets[p->pid - 1] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
 					current_nb_tickets += tickets[p->pid - 1];
 				}
 		} else {
-			
 			current_nb_tickets -= tickets[p->pid - 1];
 			tickets[p->pid - 1] = 0;
 		}
@@ -196,7 +195,10 @@ PUBLIC void yield(void) {
 	}
 
 	// The lottery starts
-	unsigned int winner_ticket = (krand()%current_nb_tickets) + 1;
+	unsigned int winner_ticket = 0;
+	if (current_nb_tickets != 0) {
+		winner_ticket = (krand()%current_nb_tickets) + 1;
+	}
 	unsigned int process_ticket = 0;
 	/* Choose a process to run next. */
 	next = IDLE;
