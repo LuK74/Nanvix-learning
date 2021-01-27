@@ -184,10 +184,11 @@ PUBLIC void yield(void) {
 				 	tickets[p->pid - 1] = (krand()%max_tickets)+1;
 					current_nb_tickets += tickets[p->pid - 1];
 				}
-		}/* else {
-			current_nb_tickets -= tickets[(p-FIRST_PROC)/sizeof(void *)];
-			tickets[(p-FIRST_PROC)/sizeof(void *)] = 0;
-		}*/
+		} else {
+			
+			current_nb_tickets -= tickets[p->pid - 1];
+			tickets[p->pid - 1] = 0;
+		}
 
 		/* Alarm has expired. */
 		if ((p->alarm) && (p->alarm < ticks))

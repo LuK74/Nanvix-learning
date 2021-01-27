@@ -283,6 +283,7 @@
 	EXTERN struct process proctab[PROC_MAX];
 	EXTERN struct process *curr_proc;
 	EXTERN struct process *last_proc;
+	EXTERN unsigned int tickets[PROC_MAX];
 	EXTERN pid_t next_pid;
 	EXTERN unsigned nprocs;
 
