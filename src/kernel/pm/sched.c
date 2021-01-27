@@ -126,6 +126,10 @@ PUBLIC void yieldOld(void)
 		switch_to(next);
 }
 
+// We keep in this tab, the indice of the queue of each processes
+// - 1 : Not used
+// 0 : Min priority
+// 7 : Max priority
 PUBLIC int queue[PROC_MAX];
 
 /*
@@ -140,8 +144,8 @@ PUBLIC void yield(void) {
 	priority level by one */
 
 	if (curr_proc->counter == 0 && curr_proc != IDLE) {
-		if (queue[(curr_proc - FIRST_PROC)/sizeof(void *)] > 0) {
-			queue[(curr_proc - FIRST_PROC)/sizeof(void *)]--;
+		if (queue[curr_proc->pid - 1] > 0) {
+			queue[curr_proc->pid - 1]--;
 		}
 	}
 
@@ -171,13 +175,13 @@ PUBLIC void yield(void) {
 	{
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY) {
-			queue[(p - FIRST_PROC)/sizeof(void *)] = -1;
+			queue[p->pid - 1] = -1;
 			continue;
 		}
 		else {
 			/* If the process is ready, we give it the highest user priority */
-			if (queue[(p - FIRST_PROC)/sizeof(void *)] == -1) {
-				queue[(p - FIRST_PROC)/sizeof(void *)] = 7;
+			if (queue[p->pid - 1] == -1) {
+				queue[p->pid - 1] = 7;
 			}
 		}
 
@@ -186,22 +190,19 @@ PUBLIC void yield(void) {
 		 * waiting time and highess priority found
 		 */
 		if (next != IDLE) {
-		int p_queueRank = queue[(p - FIRST_PROC)/sizeof(void *)];
-		int n_queueRank = queue[(next - FIRST_PROC)/sizeof(void *)];
+			int p_queueRank = queue[p->pid - 1];
+			int n_queueRank = queue[next->pid - 1];
 			if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter))
 			{
 				next->counter++;
 				next = p;
 			}	else
-					p->counter++;
+				// Incrementing waiting process
+				p->counter++;
 		} else {
 			next = p;
 		}
 
-		/*
-		 * Increment waiting
-		 * time of process.
-		 */
 
 	}
 
