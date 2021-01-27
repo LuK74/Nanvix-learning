@@ -197,21 +197,22 @@ PUBLIC void yieldPriority(void)
 		switch_to(next);
 }
 
+PUBLIC int queue[PROC_MAX];
 
 /*
 * Multiple Queue Scheduler
-* We'll consider that 40 (PRIO_USER) is the highest user priority
-* And 21 (PRIO_SIG + 1) is the lowest
+* Use of 8 queues
 */
-PUBLIC void yieldMQ(void) {
+PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
 
 	/* If the current process use all his quantum, we'll decrease his
 	priority level by one */
+
 	if (curr_proc->counter == 0) {
-		if (curr_proc->priority > PRIO_SIG + 1) {
-			curr_proc->priority--;
+		if (queue[(curr_proc - FIRST_PROC)/sizeof(void *)] > 0) {
+			queue[(curr_proc - FIRST_PROC)/sizeof(void *)]--;
 		}
 	}
 
@@ -240,20 +241,24 @@ PUBLIC void yieldMQ(void) {
 	for (p = FIRST_PROC; p <= LAST_PROC; p++)
 	{
 		/* Skip non-ready process. */
-		if (p->state != PROC_READY)
+		if (p->state != PROC_READY) {
+			queue[(p - FIRST_PROC)/sizeof(void *)] = -1;
 			continue;
+		}
 		else {
 			/* If the process is ready, we give it the highest user priority */
-			if (p->priority <= PRIO_SIG) {
-				p->priority = PRIO_USER;
+			if (queue[(p - FIRST_PROC)/sizeof(void *)] == -1) {
+				queue[(p - FIRST_PROC)/sizeof(void *)] = 7;
 			}
 		}
+		
 		/*
 		 * Process with higher
 		 * waiting time and highess priority found
 		 */
-
-		if (p->priority > next-> priority || (p->priority == next->priority && p->counter > next->counter) || next == IDLE)
+		int p_queueRank = queue[(p - FIRST_PROC)/sizeof(void *)];
+		int n_queueRank = queue[(next - FIRST_PROC)/sizeof(void *)];
+		if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter) || next == IDLE)
 		{
 			next->counter++;
 			next = p;
@@ -270,6 +275,7 @@ PUBLIC void yieldMQ(void) {
 	/* Switch to next process. */
 	next->state = PROC_RUNNING;
 	next->counter = PROC_QUANTUM;
+	next->priority = PRIO_USER;
 
 	if (curr_proc != next)
 		switch_to(next);
@@ -302,13 +308,15 @@ PUBLIC void yieldLottery(void) {
 	// Here we randomly give our current process a number of tickets
 	// But his maximal number of tickets will depends on how much
 	// of his quantum it has used
-	if (curr_proc->counter == 0) {
-		curr_proc->counter = krand()%(max_tickets - 9000) + 1 ;
-	} else {
-		curr_proc->counter = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 9000) + 1 ;
+	if (curr_proc != IDLE) {
+		if (curr_proc->counter == 0) {
+			curr_proc->counter = krand()%(max_tickets - 9000) + 1 ;
+		} else {
+			curr_proc->counter = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 9000) + 1 ;
+		}
+		current_nb_tickets += curr_proc->counter;
 	}
 
-	current_nb_tickets += curr_proc->counter;
 
 	/* Re-schedule process for execution. */
 	if (curr_proc->state == PROC_RUNNING)
