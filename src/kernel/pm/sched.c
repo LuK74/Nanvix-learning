@@ -126,77 +126,6 @@ PUBLIC void yieldOld(void)
 		switch_to(next);
 }
 
-/*
-* Another scheduler
-* Priority Scheduling
-*/
-PUBLIC void yieldPriority(void)
-{
-	struct process *p;    /* Working process.     */
-	struct process *next; /* Next process to run. */
-
-	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
-		sched(curr_proc);
-
-	/* Remember this process. */
-	last_proc = curr_proc;
-
-	/* Check alarm. */
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-	{
-		/* Skip invalid processes. */
-		if (!IS_VALID(p))
-			continue;
-
-		/* Alarm has expired. */
-		if ((p->alarm) && (p->alarm < ticks))
-			p->alarm = 0, sndsig(p, SIGALRM);
-	}
-
-	/* Choose a process to run next. */
-	next = IDLE;
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-	{
-		/* Skip non-ready process. */
-		if (p->state != PROC_READY)
-			continue;
-		else {
-				/* If the process is ready, we give it the highest user priority */
-				if (p->priority <= PRIO_SIG) {
-					p->priority = PRIO_USER;
-				}
-		}
-		/*
-		 * With the use of our coefficients
-		 * 30% Static priority (we assume that our system decide of that priority)
-		 * 30% Nice Priority (chosen by the user)
-		 * 40% Waiting time (allow even the process with the tiniest priority to run)
-		 * We can decide which process should be run next
-		 * Those coefficients can be modify at will
-		 */
-		if (p->priority*0.3+p->nice*0.3+p->counter*0.4 > next->priority*0.3+next->nice*0.3+next->counter*0.4)
-		{
-			next = p;
-			next->counter++;
-
-		} else {
-
-			p->counter++;
-
-		}
-
-
-	}
-
-	next->state = PROC_RUNNING;
-	next->counter = PROC_QUANTUM;
-
-
-	if (curr_proc != next)
-		switch_to(next);
-}
-
 PUBLIC int queue[PROC_MAX];
 
 /*
@@ -251,7 +180,7 @@ PUBLIC void yield(void) {
 				queue[(p - FIRST_PROC)/sizeof(void *)] = 7;
 			}
 		}
-		
+
 		/*
 		 * Process with higher
 		 * waiting time and highess priority found
@@ -276,103 +205,6 @@ PUBLIC void yield(void) {
 	next->state = PROC_RUNNING;
 	next->counter = PROC_QUANTUM;
 	next->priority = PRIO_USER;
-
-	if (curr_proc != next)
-		switch_to(next);
-}
-
-
-/*
-*	Lottery Scheduler
-*
-*/
-
-// Coefficient that need to be chosen carefully
-// A lower Coefficient will make the system less efficient
-// Because the highest the coefficient is, the difference between the probability
-// to be chosen of a non interactive process and a interactive process will the
-// higher
-// So, an interactive process will be selected more often
-
-// Maximum tickets a process can have
-PUBLIC unsigned int max_tickets = 10000;
-
-// Sum of all tickets hold by our process
-PUBLIC unsigned int current_nb_tickets = 0;
-
-PUBLIC void yieldLottery(void) {
-	struct process *p;    /* Working process.     */
-	struct process *next; /* Next process to run. */
-
-
-	// Here we randomly give our current process a number of tickets
-	// But his maximal number of tickets will depends on how much
-	// of his quantum it has used
-	if (curr_proc != IDLE) {
-		if (curr_proc->counter == 0) {
-			curr_proc->counter = krand()%(max_tickets - 9000) + 1 ;
-		} else {
-			curr_proc->counter = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 9000) + 1 ;
-		}
-		current_nb_tickets += curr_proc->counter;
-	}
-
-
-	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
-		curr_proc->state = PROC_READY;
-
-	/* Remember this process. */
-	last_proc = curr_proc;
-
-
-	/* Check alarm. */
-	/* Count number of ready processes */
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-	{
-
-		/* Skip invalid processes. */
-		if (!IS_VALID(p))
-			continue;
-
-		if (p->state == PROC_READY) {
-				if (p->counter == 0) {
-					p->counter = (krand()%max_tickets)+1;
-					current_nb_tickets += p->counter;
-				}
-		}
-
-		/* Alarm has expired. */
-		if ((p->alarm) && (p->alarm < ticks))
-			p->alarm = 0, sndsig(p, SIGALRM);
-	}
-
-	// The lottery starts
-	unsigned int winner_ticket = (krand()%current_nb_tickets) + 1;
-	unsigned int process_ticket = 0;
-	/* Choose a process to run next. */
-	next = IDLE;
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
-	{
-		/* Skip non-ready process. */
-		if (p->state != PROC_READY)
-			continue;
-		/*
-		 * Process holding the winning ticket will be chosen
-		 */
-		process_ticket += p->counter;
-		if (winner_ticket <= process_ticket) {
-			next = p;
-			current_nb_tickets -= next->counter;
-			break;
-		}
-
-	}
-
-	/* Switch to next process. */
-	next->state = PROC_RUNNING;
-	next->priority = PRIO_USER;
-	next->counter = PROC_QUANTUM;
 
 	if (curr_proc != next)
 		switch_to(next);
