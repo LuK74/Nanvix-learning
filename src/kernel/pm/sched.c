@@ -94,6 +94,7 @@ PUBLIC void yieldOld(void)
 
 	/* Choose a process to run next. */
 	next = IDLE;
+	IDLE->counter = 0 ;
 	for (p = FIRST_PROC; p <= LAST_PROC; p++)
 	{
 		/* Skip non-ready process. */
@@ -136,81 +137,99 @@ PUBLIC int queue[PROC_MAX];
 * Multiple Queue Scheduler
 * Use of 8 queues
 */
-PUBLIC void yield(void) {
-	struct process *p;    /* Working process.     */
-	struct process *next; /* Next process to run. */
-
-	/* If the current process use all his quantum, we'll decrease his
-	priority level by one */
-
-	if (curr_proc->counter == 0 && curr_proc != IDLE) {
-		if (queue[(curr_proc-FIRST_PROC)] > 0) {
-			queue[(curr_proc-FIRST_PROC)]--;
-		}
-	}
-
-	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
-		sched(curr_proc);
-
-	/* Remember this process. */
-	last_proc = curr_proc;
+PUBLIC void yield(void)
+{
+  struct process *p;    /* Working process.     */
+  struct process *next; /* Next process to run. */
 
 
-	/* Check alarm. */
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+  /* Re-schedule process for execution. */
+  if (curr_proc->state == PROC_RUNNING)
+    sched(curr_proc);
+
+  /* Remember this process. */
+  last_proc = curr_proc;
+
+  /*
+     If the current process use all his quantum, we'll decrease his
+     priority level by one
+  */
+
+  if (curr_proc->counter == 0 && curr_proc != IDLE)
+    {
+      if (queue[(curr_proc-IDLE)] > 0)
 	{
-		/* Skip invalid processes. */
-		if (!IS_VALID(p))
-			continue;
-
-		/* Alarm has expired. */
-		if ((p->alarm) && (p->alarm < ticks))
-			p->alarm = 0, sndsig(p, SIGALRM);
+	  queue[(curr_proc-IDLE)]--;
 	}
-
-	/* Choose a process to run next. */
-	next = IDLE;
-	for (p = FIRST_PROC; p <= LAST_PROC; p++)
+      else
 	{
-		/* Skip non-ready process. */
-		if (p->state != PROC_READY) {
-			queue[(p-FIRST_PROC)] = -1;
-			continue;
-		}
-		else {
-			/* If the process is ready, we give it the highest user priority */
-			if (queue[(p-FIRST_PROC)] == -1) {
-				queue[(p-FIRST_PROC)] = 7;
-			}
-		}
-
-		/*
-		 * Process with higher
-		 * waiting time and highess priority found
-		 */
-		if (next != IDLE) {
-			int p_queueRank = queue[(p-FIRST_PROC)];
-			int n_queueRank = queue[(next-FIRST_PROC)];
-			if (p_queueRank > n_queueRank || (p_queueRank == n_queueRank && p->counter > next->counter))
-			{
-				next->counter++;
-				next = p;
-			}	else
-				// Incrementing waiting process
-				p->counter++;
-		} else {
-			next = p;
-		}
+	  if (curr_proc == IDLE)
+	    queue [0] = -1 ;
+	}
+    }
 
 
+  /* Check alarm. */
+  for (p = FIRST_PROC; p <= LAST_PROC; p++)
+    {
+      /* Skip invalid processes. */
+      if (!IS_VALID(p))
+	continue;
+
+      /* Alarm has expired. */
+      if ((p->alarm) && (p->alarm < ticks))
+	p->alarm = 0, sndsig(p, SIGALRM);
+    }
+
+  /* Choose a process to run next. */
+  next = IDLE;
+  IDLE->counter = 0 ;
+
+  for (p = FIRST_PROC; p <= LAST_PROC; p++)
+    {
+      /* Skip non-ready process. */
+
+      if (p->state != PROC_READY)
+	{
+	  continue;
+	}
+      else
+	{
+	  /* If the process is ready, we give it the highest user priority */
+	  if (queue[(p-IDLE)] == -1)
+	    {
+	      queue[(p-IDLE)] = 7;
+	    }
 	}
 
-	/* Switch to next process. */
-	next->state = PROC_RUNNING;
-	next->counter = PROC_QUANTUM;
-	next->priority = PRIO_USER;
+      /*
+       * Process with higher
+       * waiting time and highess priority found
+       */
+      if (next != IDLE)
+	{
+	  int p_queueRank = queue[(p-IDLE)];
+	  int n_queueRank = queue[(next-IDLE)];
+	  if ((p_queueRank > n_queueRank) || ((p_queueRank == n_queueRank) && (p->counter > next->counter)))
+	    {
+	      next->counter++;
+	      next = p;
+	    }
+	  else
+	    // Incrementing waiting process
+	    p->counter++;
+	}
+      else
+	{
+	  next = p;
+	}
+    }
 
-	if (curr_proc != next)
-		switch_to(next);
+  /* Switch to next process. */
+  next->state = PROC_RUNNING;
+  next->counter = PROC_QUANTUM;
+  next->priority = PRIO_USER;
+
+  if (curr_proc != next)
+    switch_to(next);
 }

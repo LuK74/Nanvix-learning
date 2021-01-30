@@ -311,18 +311,18 @@ static int sched_test2(void)
 			if (i & 1)
 			{
 				nice(2*NZERO);
-				printf("Child %d with pid %d works\n", i, pid[i]);
+				//printf("Child %d with pid %d works\n", i, pid[i]);
 				work_cpu();
-				printf("Child %d with pid %d ended work\n", i, pid[i]);
+				//printf("Child %d with pid %d ended work\n", i, pid[i]);
 				_exit(EXIT_SUCCESS);
 			}
 
 			else
 			{
 				nice(-2*NZERO);
-				printf("Child %d with pid %d pauses\n", i, pid[i]);
+				//printf("Child %d with pid %d pauses\n", i, pid[i]);
 				pause();
-				printf("Child %d with pid %d restarted\n", i, pid[i]);
+				//printf("Child %d with pid %d restarted\n", i, pid[i]);
 				_exit(EXIT_SUCCESS);
 			}
 		}
@@ -331,13 +331,13 @@ static int sched_test2(void)
 	for (int i = 0; i < 4; i++)
 	{
 		if (i & 1) {
-			printf("Waiting for child %d with pid %d\n", i, pid[i]);
+			//printf("Waiting for child %d with pid %d\n", i, pid[i]);
 			wait(NULL);
 		}
 
 		else
 		{
-			printf("Killing child %d with pid %d\n", i, pid[i]);
+			//printf("Killing child %d with pid %d\n", i, pid[i]);
 			kill(pid[i], SIGCONT);
 			wait(NULL);
 		}
