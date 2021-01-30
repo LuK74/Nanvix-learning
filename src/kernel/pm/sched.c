@@ -138,15 +138,15 @@ PUBLIC void yieldOld(void)
 // So, an interactive process will be selected more often
 
 // Maximum tickets a process can have
-PUBLIC unsigned int max_tickets = 100000;
 
-// Sum of all tickets hold by our process
-PUBLIC int current_nb_tickets = 0;
-PUBLIC unsigned int tickets[PROC_MAX];
+// Tickets hold by process
+PUBLIC int tickets[PROC_MAX];
 
 PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
 	struct process *next; /* Next process to run. */
+
+	int nb_tickets = 0;
 
 	// Here we randomly give our current process a number of tickets
 	// But his maximal number of tickets will depends on how much
@@ -155,12 +155,19 @@ PUBLIC void yield(void) {
 	/* Re-schedule process for execution. */
 
 	if (curr_proc != IDLE) {
-		if (curr_proc->counter == 0) {
-			tickets[curr_proc - FIRST_PROC] = krand()%(max_tickets - 90000) + 1 ;
-		} else {
-			tickets[curr_proc - FIRST_PROC] = krand()%(max_tickets - ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM) * 90000) + 1 ;
+		if (curr_proc->counter < PROC_QUANTUM/2) {
+			tickets[curr_proc - IDLE] -= (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM));
+			if (tickets[curr_proc - IDLE] <= 0) {
+				tickets[curr_proc - IDLE] = 1;
+			}
+		} else if (curr_proc->counter > PROC_QUANTUM/2) {
+			tickets[curr_proc - IDLE] += (10 - (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM)));
+			if (tickets[curr_proc - IDLE] > 200) {
+				tickets[curr_proc - IDLE] = 200;
+			}
 		}
-		current_nb_tickets += tickets[curr_proc - FIRST_PROC];
+	} else {
+		tickets[0] = 0;
 	}
 
 	if (curr_proc->state == PROC_RUNNING)
@@ -179,14 +186,15 @@ PUBLIC void yield(void) {
 		if (!IS_VALID(p))
 			continue;
 
+		if (tickets[p - IDLE] == 0) {
+			//tickets[p - IDLE] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
+		}
+
 		if (p->state == PROC_READY) {
-				if (tickets[p - FIRST_PROC] == 0) {
-				 	tickets[p - FIRST_PROC] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
-					current_nb_tickets += tickets[p - FIRST_PROC];
-				}
+			nb_tickets += tickets[p - IDLE];
 		} else {
-			current_nb_tickets -= tickets[p - FIRST_PROC];
-			tickets[p - FIRST_PROC] = 0;
+			/*current_nb_tickets -= tickets[p - IDLE];
+			tickets[p - IDLE] = 0;*/
 		}
 
 		/* Alarm has expired. */
@@ -196,8 +204,8 @@ PUBLIC void yield(void) {
 
 	// The lottery starts
 	unsigned int winner_ticket = 0;
-	if (current_nb_tickets != 0) {
-		winner_ticket = (krand()%current_nb_tickets) + 1;
+	if (nb_tickets != 0) {
+		winner_ticket = (krand()%nb_tickets) + 1;
 	}
 	unsigned int process_ticket = 0;
 	/* Choose a process to run next. */
@@ -210,16 +218,16 @@ PUBLIC void yield(void) {
 		/*
 		 * Process holding the winning ticket will be chosen
 		 */
-		process_ticket += tickets[p - FIRST_PROC];
-		if (winner_ticket <= process_ticket) {
+		process_ticket += tickets[p - IDLE];
+		if (winner_ticket <= process_ticket && next == IDLE) {
 			next = p;
-			break;
+			//break;
 		}
 
 	}
 
 	/* Switch to next process. */
-	current_nb_tickets -= tickets[next->pid - 1];
+	//current_nb_tickets -= tickets[p - IDLE];
 	next->state = PROC_RUNNING;
 	next->priority = PRIO_USER;
 	next->counter = PROC_QUANTUM;
