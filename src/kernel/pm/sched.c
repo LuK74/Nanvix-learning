@@ -162,10 +162,7 @@ PUBLIC void yield(void)
 		if (p->state != PROC_READY)
 			continue;
 		else {
-				/* If the process is ready, we give it the highest user priority */
-				if (p->priority <= PRIO_SIG) {
-					p->priority = PRIO_USER;
-				}
+
 		}
 		/*
 		 * With the use of our coefficients
@@ -191,6 +188,7 @@ PUBLIC void yield(void)
 
 	next->state = PROC_RUNNING;
 	next->counter = PROC_QUANTUM;
+	next->priority = PRIO_USER;
 
 
 	if (curr_proc != next)
