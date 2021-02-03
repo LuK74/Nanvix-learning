@@ -156,6 +156,9 @@ found:
 	proc->chain = NULL;
 
 	tickets[proc - IDLE] = 500;
+
+	// Commenter cette ligne pour faire réapparaître les "core dumped"
+	tickets[curr_proc - IDLE] = 1;
 	sched(proc);
 
 	curr_proc->nchildren++;

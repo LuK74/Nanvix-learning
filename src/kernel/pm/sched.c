@@ -215,6 +215,12 @@ PUBLIC void yield(void) {
 
 	}
 
+	// Used for debug
+	// To know if IDLE is elected during some test
+	/*if (next == IDLE) {
+		next->state = 0;
+	}*/
+
 	/* Switch to next process. */
 	next->state = PROC_RUNNING;
 	next->priority = PRIO_USER;
