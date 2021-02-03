@@ -33,14 +33,6 @@ PUBLIC int sys_nice(int incr)
 
 	curr_proc->nice += incr;
 
-	/*int diff = curr_proc->nice - incr;
-	tickets[curr_proc - IDLE] += diff;
-	if (tickets[curr_proc - IDLE] < 0) {
-		tickets[curr_proc - IDLE] = 1;
-	} else if (tickets[curr_proc - IDLE] > 200) {
-		tickets[curr_proc - IDLE] = 200;
-	}*/
-
 	/* Do not exceed boundaries. */
 	if (curr_proc->nice < 0)
 		curr_proc->nice = 0;
