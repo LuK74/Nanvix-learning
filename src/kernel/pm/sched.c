@@ -174,8 +174,10 @@ PUBLIC void yield(void) {
 	{
 
 		/* Skip invalid processes. */
-		if (!IS_VALID(p))
+		if (!IS_VALID(p)) {
+			tickets[p - IDLE] = 0;
 			continue;
+		}
 
 		if (p->state == PROC_READY) {
 			if (tickets[p - IDLE] == 0) {
