@@ -161,9 +161,6 @@ PUBLIC void yield(void)
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
-		else {
-
-		}
 		/*
 		 * With the use of our coefficients
 		 * 30% Static priority (we assume that our system decide of that priority)
@@ -171,8 +168,11 @@ PUBLIC void yield(void)
 		 * 40% Waiting time (allow even the process with the tiniest priority to run)
 		 * We can decide which process should be run next
 		 * Those coefficients can be modify at will
+		 *
+		 * Specificity for Nice : We use the coefficients (NZERO*2-1 - p->nice) because
+		 * when nice is lower, we want the priority to be higher
 		 */
-		if (p->priority*0.3+p->nice*0.3+p->counter*0.4 > next->priority*0.3+next->nice*0.3+next->counter*0.4)
+		if (p->priority*0.3+(NZERO*2-1-p->nice)*0.3+p->counter*0.4 > next->priority*0.3+(NZERO*2-1-next->nice*0.3)+next->counter*0.4)
 		{
 			next = p;
 			next->counter++;
