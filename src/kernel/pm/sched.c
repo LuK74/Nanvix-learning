@@ -129,18 +129,9 @@ PUBLIC void yieldOld(void)
 *	Lottery Scheduler
 *
 */
-
-// Coefficient that need to be chosen carefully
-// A lower Coefficient will make the system less efficient
-// Because the highest the coefficient is, the difference between the probability
-// to be chosen of a non interactive process and a interactive process will the
-// higher
-// So, an interactive process will be selected more often
-
-// Maximum tickets a process can have
-
 // Tickets hold by process
 PUBLIC int tickets[PROC_MAX];
+//PUBLIC int ticket_median = 100;
 
 PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
@@ -157,13 +148,13 @@ PUBLIC void yield(void) {
 	if (curr_proc != IDLE) {
 		if (curr_proc->counter < PROC_QUANTUM/2) {
 			tickets[curr_proc - IDLE] -= (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM));
-			if (tickets[curr_proc - IDLE] <= 0) {
-				tickets[curr_proc - IDLE] = 1;
+			if (tickets[curr_proc - IDLE] <= 0+500*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1))) {
+				tickets[curr_proc - IDLE] = 1 + 500*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1));
 			}
 		} else if (curr_proc->counter > PROC_QUANTUM/2) {
 			tickets[curr_proc - IDLE] += (10 - (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM)));
-			if (tickets[curr_proc - IDLE] > 200) {
-				tickets[curr_proc - IDLE] = 200;
+			if (tickets[curr_proc - IDLE] > 1000-500*(curr_proc->nice/NZERO*2-1)) {
+				tickets[curr_proc - IDLE] = 1000-500*(curr_proc->nice/(NZERO*2-1));
 			}
 		}
 	} else {
@@ -186,15 +177,11 @@ PUBLIC void yield(void) {
 		if (!IS_VALID(p))
 			continue;
 
-		if (tickets[p - IDLE] == 0) {
-			//tickets[p - IDLE] = (krand()%(max_tickets/2+((max_tickets/2)*((-3/4)+(3/2)*((p->nice+1/NZERO*2))))))+1;
-		}
-
 		if (p->state == PROC_READY) {
+			if (tickets[p - IDLE] == 0) {
+				tickets[p - IDLE] = 500;
+			}
 			nb_tickets += tickets[p - IDLE];
-		} else {
-			/*current_nb_tickets -= tickets[p - IDLE];
-			tickets[p - IDLE] = 0;*/
 		}
 
 		/* Alarm has expired. */
@@ -219,15 +206,14 @@ PUBLIC void yield(void) {
 		 * Process holding the winning ticket will be chosen
 		 */
 		process_ticket += tickets[p - IDLE];
-		if (winner_ticket <= process_ticket && next == IDLE) {
+		if (winner_ticket <= process_ticket) {
 			next = p;
-			//break;
+			break;
 		}
 
 	}
 
 	/* Switch to next process. */
-	//current_nb_tickets -= tickets[p - IDLE];
 	next->state = PROC_RUNNING;
 	next->priority = PRIO_USER;
 	next->counter = PROC_QUANTUM;

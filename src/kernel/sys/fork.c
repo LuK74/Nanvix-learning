@@ -155,7 +155,7 @@ found:
 	proc->next = NULL;
 	proc->chain = NULL;
 
-	tickets[proc - IDLE] = 100;
+	tickets[proc - IDLE] = 500;
 	sched(proc);
 
 	curr_proc->nchildren++;

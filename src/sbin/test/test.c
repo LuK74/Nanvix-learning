@@ -312,14 +312,14 @@ static int sched_test2(void)
 			{
 				nice(2*NZERO);
 				work_cpu();
-				printf("Child %d ended\n", i);
+				//printf("Child %d ended\n", i);
 				_exit(EXIT_SUCCESS);
 			}
 
 			else
 			{
 				nice(-2*NZERO);
-				printf("Child %d is going to sleep\n", i);
+				//printf("Child %d is going to sleep\n", i);
 				pause();
 				_exit(EXIT_SUCCESS);
 			}
@@ -329,13 +329,13 @@ static int sched_test2(void)
 	for (int i = 0; i < 4; i++)
 	{
 		if (i & 1) {
-			printf("Waiting for Child %d, with pid %d\n", i, pid[i]);
+			//printf("Waiting for Child %d, with pid %d\n", i, pid[i]);
 			wait(NULL);
 		}
 
 		else
 		{
-			printf("Killing child %d\n", i);
+			//printf("Killing child %d\n", i);
 			kill(pid[i], SIGCONT);
 			wait(NULL);
 		}
