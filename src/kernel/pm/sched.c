@@ -154,7 +154,7 @@ PUBLIC void yield(void)
      If the current process use all his quantum, we'll decrease his
      priority level by one
   */
-
+	/*
 	// Here we dynamically modify the priority queue which a process is in
 	if (curr_proc != IDLE) {
 		// We're checking if the quantum is less than a proportion of the
@@ -181,13 +181,13 @@ PUBLIC void yield(void)
 		}
 	} else {
 		queue[0] = -1;
-	}
+	}*/
 
 	// Old version
 	// In this version we were moving a process to an inferior queue
 	// when a process used all of his Quantum
 	// And it could never go up again
-  /*if (curr_proc->counter == 0 && curr_proc != IDLE)
+  if (curr_proc->counter == 0 && curr_proc != IDLE)
   {
       if (queue[(curr_proc-IDLE)] > 0)
 	{
@@ -198,7 +198,7 @@ PUBLIC void yield(void)
 	  if (curr_proc == IDLE)
 	    queue [0] = -1 ;
 	}
-}*/
+}
 
 
   /* Check alarm. */
