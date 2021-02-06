@@ -155,8 +155,40 @@ PUBLIC void yield(void)
      priority level by one
   */
 
-  if (curr_proc->counter == 0 && curr_proc != IDLE)
-    {
+	// Here we dynamically modify the priority queue which a process is in
+	if (curr_proc != IDLE) {
+		// We're checking if the quantum is less than a proportion of the
+		// entire quantum allocated
+		// This proportion depends of the current rank of the process
+		// Lower the rank is, lower the proportion is
+		// So it make it more difficult to go the lowest queue
+		if (curr_proc->counter <= ((0.35 - (0.35/7 * queue[(curr_proc-IDLE)])))  * PROC_QUANTUM) {
+			if (queue[(curr_proc-IDLE)] > 0)
+			{
+				queue[(curr_proc-IDLE)]--;
+			}
+		}
+		// We're checking if the quantum is more than a proportion of the
+		// entire quantum allocated
+		// This proportion depends of the current rank of the process
+		// Higher the rank is, higher the proportion is
+		// So it make it more difficult to go the highest queue
+		else if (curr_proc->counter >= (0.7/7 * queue[(curr_proc-IDLE)])  * PROC_QUANTUM) {
+			if (queue[(curr_proc-IDLE)] < 7)
+			{
+				queue[(curr_proc-IDLE)]++;
+			}
+		}
+	} else {
+		queue[0] = -1;
+	}
+
+	// Old version
+	// In this version we were moving a process to an inferior queue
+	// when a process used all of his Quantum
+	// And it could never go up again
+  /*if (curr_proc->counter == 0 && curr_proc != IDLE)
+  {
       if (queue[(curr_proc-IDLE)] > 0)
 	{
 	  queue[(curr_proc-IDLE)]--;
@@ -166,7 +198,7 @@ PUBLIC void yield(void)
 	  if (curr_proc == IDLE)
 	    queue [0] = -1 ;
 	}
-    }
+}*/
 
 
   /* Check alarm. */
@@ -202,27 +234,41 @@ PUBLIC void yield(void)
 	    }
 	}
 
-      /*
-       * Process with higher
-       * waiting time and highess priority found
-       */
-      if (next != IDLE)
-	{
-	  int p_queueRank = queue[(p-IDLE)];
-	  int n_queueRank = queue[(next-IDLE)];
-	  if ((p_queueRank > n_queueRank) || ((p_queueRank == n_queueRank) && (p->counter > next->counter)))
-	    {
-	      next->counter++;
-	      next = p;
-	    }
-	  else
-	    // Incrementing waiting process
-	    p->counter++;
-	}
+    /*
+    * Process with higher
+    * waiting time and highess priority found
+    */
+    if (next != IDLE)
+		{
+
+			// Access to the queue rank of the two processes we're going to compare
+	  	int p_queueRank = queue[(p-IDLE)];
+	  	int n_queueRank = queue[(next-IDLE)];
+
+
+			// Selection of a process according to their priority and counter
+			// Firstly we're checking if the new process we're studying has a priority
+			// higher than our current next process
+			// If it does, we know that we need to select the new process
+			// If not, we're checking if their priority are equal
+			//	 If it does, we compare their waiting time
+			//		 If the new process has a waiting time (counter) high, we choose it
+			//		 If not, we skip
+			// 	 If not, we skip
+	  	if ((p_queueRank > n_queueRank) || ((p_queueRank == n_queueRank) && (p->counter > next->counter)))
+	    	{
+	      	next->counter++;
+	      	next = p;
+	    	}
+	  	else
+	    	// Incrementing waiting process
+	    	p->counter++;
+			}
       else
-	{
-	  next = p;
-	}
+			{
+	  		next = p;
+			}
+
     }
 
   /* Switch to next process. */

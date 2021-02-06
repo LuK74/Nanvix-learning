@@ -154,7 +154,12 @@ found:
 	proc->alarm = 0;
 	proc->next = NULL;
 	proc->chain = NULL;
+
+	// Here we set the queue where the process is to -1
+	// We could directly affect it the maximal value
 	queue[proc - IDLE] = -1;
+
+
 	sched(proc);
 
 	curr_proc->nchildren++;
