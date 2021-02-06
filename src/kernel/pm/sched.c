@@ -131,7 +131,13 @@ PUBLIC void yieldOld(void)
 */
 // Tickets hold by process
 PUBLIC int tickets[PROC_MAX];
-//PUBLIC int ticket_median = 100;
+
+// Default number of tickets gave to a process
+// during his creation
+PUBLIC int init_tickets = 500;
+
+int ticket_incr = 10;
+
 
 PUBLIC void yield(void) {
 	struct process *p;    /* Working process.     */
@@ -139,22 +145,40 @@ PUBLIC void yield(void) {
 
 	int nb_tickets = 0;
 
-	// Here we randomly give our current process a number of tickets
-	// But his maximal number of tickets will depends on how much
-	// of his quantum it has used
-
 	/* Re-schedule process for execution. */
 
+	// This sequence of code is used to dynamically manage
+	// the number of tickets that each process have
+	// We'll decrease or increase the number of tickets with
+	// the variable "ticket_incr" and with a coefficient calculated
+	// with the use of the quantum by the process
 	if (curr_proc != IDLE) {
+
+		// This sequence of instruction is for process that are using more than
+		// the half of their quantum
+		// We want to give to those process, less tickets than the others
 		if (curr_proc->counter < PROC_QUANTUM/2) {
-			tickets[curr_proc - IDLE] -= (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM));
-			if (tickets[curr_proc - IDLE] <= 0+500*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1))) {
-				tickets[curr_proc - IDLE] = 1 + 500*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1));
+
+			// decrease the number of tickets
+			tickets[curr_proc - IDLE] -= (ticket_incr * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM));
+
+			// Here we just check that we are not outside the process' tickets boundaries
+			// which are calculated with the nice value of the process
+			if (tickets[curr_proc - IDLE] <= 0+init_tickets*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1))) {
+				tickets[curr_proc - IDLE] = 1 + init_tickets*(((NZERO*2-1) - (curr_proc->nice)) / (NZERO*2-1));
 			}
+		// This sequence of instruction is for process that are not using more than
+		// the half of their quantum
+		// We want to give to those process, more tickets than the others
 		} else if (curr_proc->counter > PROC_QUANTUM/2) {
-			tickets[curr_proc - IDLE] += (10 - (10 * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM)));
-			if (tickets[curr_proc - IDLE] > 1000-500*(curr_proc->nice/NZERO*2-1)) {
-				tickets[curr_proc - IDLE] = 1000-500*(curr_proc->nice/(NZERO*2-1));
+
+			// increase the number of ticketss
+			tickets[curr_proc - IDLE] += (ticket_incr - (ticket_incr * ((PROC_QUANTUM - curr_proc->counter)/PROC_QUANTUM)));
+
+			// Here we just check that we are not outside the process' tickets boundaries
+			// which are calculated with the nice value of the process
+			if (tickets[curr_proc - IDLE] > (2*init_tickets)-init_tickets*(curr_proc->nice/NZERO*2-1)) {
+				tickets[curr_proc - IDLE] = (2*init_tickets)-init_tickets*(curr_proc->nice/(NZERO*2-1));
 			}
 		}
 	} else {
@@ -179,10 +203,18 @@ PUBLIC void yield(void) {
 			continue;
 		}
 
+
 		if (p->state == PROC_READY) {
+			// If a READY process has no ticket for an unknown reason
+			// we give it to him the default number of tickets
 			if (tickets[p - IDLE] == 0) {
-				tickets[p - IDLE] = 500;
+				tickets[p - IDLE] = init_tickets;
 			}
+
+			// If the process is ready, we add to our variable nb_tickets
+			// his number of tickets
+			// by doing so at the end of this loop, we'll have the total number of
+			// tickets hold by the processes
 			nb_tickets += tickets[p - IDLE];
 		}
 
@@ -192,6 +224,8 @@ PUBLIC void yield(void) {
 	}
 
 	// The lottery starts
+	// We "randomly" choose a winner ticket
+	// It will be choose in the interval [1; nb_tickets]
 	unsigned int winner_ticket = 0;
 	if (nb_tickets != 0) {
 		winner_ticket = (krand()%nb_tickets) + 1;

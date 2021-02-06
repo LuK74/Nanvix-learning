@@ -284,6 +284,7 @@
 	EXTERN struct process *curr_proc;
 	EXTERN struct process *last_proc;
 	EXTERN int tickets[PROC_MAX];
+	EXTERN int init_tickets;
 	EXTERN pid_t next_pid;
 	EXTERN unsigned nprocs;
 

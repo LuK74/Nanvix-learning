@@ -155,10 +155,15 @@ found:
 	proc->next = NULL;
 	proc->chain = NULL;
 
-	tickets[proc - IDLE] = 500;
+	// Here we give our new process the default number of tickets
+	// which is 500 for now
+	tickets[proc - IDLE] = init_tickets;
 
-	// Commenter cette ligne pour faire réapparaître les "core dumped"
+	// This line is fixing the bug which generate "core dumped"
+	// This problem is described more in details in my report  
 	tickets[curr_proc - IDLE] = 1;
+
+
 	sched(proc);
 
 	curr_proc->nchildren++;
