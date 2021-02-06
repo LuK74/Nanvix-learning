@@ -179,6 +179,10 @@ PUBLIC void yield(void)
 
 		} else {
 
+			/*
+			 * Increment waiting
+			 * time of process.
+			 */
 			p->counter++;
 
 		}
