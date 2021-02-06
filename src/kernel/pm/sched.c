@@ -162,7 +162,7 @@ PUBLIC void yield(void)
 		// This proportion depends of the current rank of the process
 		// Lower the rank is, lower the proportion is
 		// So it make it more difficult to go the lowest queue
-		if (curr_proc->counter <= ((0.35 - (0.35/7 * queue[(curr_proc-IDLE)])))  * PROC_QUANTUM) {
+		if (curr_proc->counter < ((queue[(curr_proc-IDLE)])/8  * PROC_QUANTUM)) {
 			if (queue[(curr_proc-IDLE)] > 0)
 			{
 				queue[(curr_proc-IDLE)]--;
@@ -173,7 +173,7 @@ PUBLIC void yield(void)
 		// This proportion depends of the current rank of the process
 		// Higher the rank is, higher the proportion is
 		// So it make it more difficult to go the highest queue
-		else if (curr_proc->counter >= (0.7/7 * queue[(curr_proc-IDLE)])  * PROC_QUANTUM) {
+		else if (curr_proc->counter >= ((queue[(curr_proc-IDLE)]+1)/8  * PROC_QUANTUM)) {
 			if (queue[(curr_proc-IDLE)] < 7)
 			{
 				queue[(curr_proc-IDLE)]++;
