@@ -17,5 +17,5 @@ PUBLIC int sys_semget(unsigned key) {
 
   if(semtab[semId].id == SEM_MAX+1) return -1;
 
-  return key;
+  return semId;
 }
