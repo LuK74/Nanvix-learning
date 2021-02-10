@@ -420,6 +420,89 @@ static int sched_test3(void)
  * @brief Producer-Consumer problem with semaphores.
  *
  * @details Reproduces consumer-producer scenario using semaphores.
+ * with severals producers and consumers
+ *
+ * @returns Zero if passed on test, and non-zero otherwise.
+ */
+int semaphore_test2(void)
+{
+	pid_t pid;                  /* Process ID.              */
+	int buffer_fd;              /* Buffer file descriptor.  */
+	int empty;                  /* Empty positions.         */
+	int full;                   /* Full positions.          */
+	int mutex;                  /* Mutex.                   */
+	const int BUFFER_SIZE = 32; /* Buffer size.             */
+	const int NR_ITEMS = 512;   /* Number of items to send. */
+
+	/* Create buffer.*/
+	buffer_fd = open("buffer", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+	if (buffer_fd < 0)
+		return (-1);
+
+	/* Create semaphores. */
+	SEM_CREATE(mutex, 1);
+	SEM_CREATE(empty, 2);
+	SEM_CREATE(full, 3);
+
+	/* Initialize semaphores. */
+	SEM_INIT(full, 0);
+	SEM_INIT(empty, BUFFER_SIZE);
+	SEM_INIT(mutex, 1);
+
+	for (int i = 0; i < 8; i++) {
+		if ((pid = fork()) > 0) {
+			if (i%2 == 0) {
+				for (int item = 0; item < NR_ITEMS; item++)
+				{
+					SEM_DOWN(empty);
+					SEM_DOWN(mutex);
+
+					PUT_ITEM(buffer_fd, item);
+					//printf("One item put");
+
+					SEM_UP(mutex);
+					SEM_UP(full);
+				}
+
+				_exit(EXIT_SUCCESS);
+			} else {
+				int item;
+				do
+				{
+					SEM_DOWN(full);
+					SEM_DOWN(mutex);
+
+					GET_ITEM(buffer_fd, item);
+					//printf("One item removed");
+
+					SEM_UP(mutex);
+					SEM_UP(empty);
+				} while (item != (NR_ITEMS - 1));
+				_exit(EXIT_SUCCESS);
+			}	
+		} else {
+			if (pid < 0) return (-1);
+		}
+	}
+	for (int i = 0; i < 8 ; i++) {
+		wait(NULL);
+	}
+ 		
+	/* Destroy semaphores. */
+	SEM_DESTROY(mutex);
+	SEM_DESTROY(empty);
+	SEM_DESTROY(full);
+
+	close(buffer_fd);
+	unlink("buffer");
+
+	return (0);
+}
+
+/**
+ * @brief Producer-Consumer problem with semaphores.
+ *
+ * @details Reproduces consumer-producer scenario using semaphores.
  *
  * @returns Zero if passed on test, and non-zero otherwise.
  */
@@ -657,6 +740,8 @@ int main(int argc, char **argv)
 			printf("Interprocess Communication Tests\n");
 			printf("  producer consumer [%s]\n",
 				(!semaphore_test3()) ? "PASSED" : "FAILED");
+			/*printf(" stress producer consumer [%s]\n",
+				(!semaphore_test2()) ? "PASSED" : "FAILED");*/
 		}
 
 		/* FPU test. */

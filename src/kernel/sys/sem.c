@@ -6,8 +6,10 @@
 
 #include <sys/sem.h>
 #include <nanvix/pm.h>
+#include <nanvix/klib.h>
 
 PUBLIC struct semaphore semtab[SEM_MAX];
+PUBLIC struct process * sem_chain[SEM_MAX];
 PUBLIC int sem_held[SEM_MAX];
 
 PUBLIC int create(int ressources) {
@@ -51,7 +53,7 @@ PUBLIC void up(int semId) {
 
 
   while (__sync_lock_test_and_set(sem_held+semId, 1)) {
-    //noop();
+    sleep(sem_chain+semId, 1);
   }
   if (semtab[semId].ressources < 0) {
     struct process * wakeupProc = semtab[semId].waitingProcess[0];
@@ -74,6 +76,7 @@ PUBLIC void up(int semId) {
   }
   semtab[semId].ressources++;
   sem_held[semId] = 0;
+  wakeup(sem_chain+semId);
 }
 
 PUBLIC void down(int semId) {
@@ -82,7 +85,7 @@ PUBLIC void down(int semId) {
   }
 
   while (__sync_lock_test_and_set(sem_held+semId, 1)) {
-    //noop();
+    sleep(sem_chain+semId, 1);
   }
  semtab[semId].ressources--;
   if (semtab[semId].ressources < 0) {
@@ -100,6 +103,7 @@ PUBLIC void down(int semId) {
 
   }
   sem_held[semId] = 0;
+  wakeup(sem_chain+semId);
 }
 
 PUBLIC void init_sem() {
@@ -107,5 +111,6 @@ PUBLIC void init_sem() {
     semtab[i].id = SEM_MAX+1;
     semtab[i].key = 65536;
     sem_held[i] = 0;
+    sem_chain[i] = NULL;
   }
 }
