@@ -451,8 +451,8 @@ int semaphore_test2(void)
 
 	for (int i = 0; i < 8; i++) {
 		if ((pid = fork()) > 0) {
-			if (i%2 == 0) {
-				for (int item = 0; item < NR_ITEMS; item++)
+			if (i != 7) {
+				for (int item = 0 + i*512; item < NR_ITEMS + i*512; item++)
 				{
 					SEM_DOWN(empty);
 					SEM_DOWN(mutex);
@@ -477,7 +477,7 @@ int semaphore_test2(void)
 
 					SEM_UP(mutex);
 					SEM_UP(empty);
-				} while (item != (NR_ITEMS - 1));
+				} while (item != ((i * 512) - 1));
 				_exit(EXIT_SUCCESS);
 			}	
 		} else {
@@ -740,8 +740,8 @@ int main(int argc, char **argv)
 			printf("Interprocess Communication Tests\n");
 			printf("  producer consumer [%s]\n",
 				(!semaphore_test3()) ? "PASSED" : "FAILED");
-			/*printf(" stress producer consumer [%s]\n",
-				(!semaphore_test2()) ? "PASSED" : "FAILED");*/
+			printf(" stress producer consumer [%s]\n",
+				(!semaphore_test2()) ? "PASSED" : "FAILED");
 		}
 
 		/* FPU test. */

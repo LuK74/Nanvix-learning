@@ -87,7 +87,8 @@ PUBLIC void down(int semId) {
   while (__sync_lock_test_and_set(sem_held+semId, 1)) {
     sleep(sem_chain+semId, 1);
   }
- semtab[semId].ressources--;
+
+  semtab[semId].ressources--;
   if (semtab[semId].ressources < 0) {
 
     for (unsigned int i = 0; i < MAX_PROCESS_WAITING ; i++) {
@@ -102,6 +103,7 @@ PUBLIC void down(int semId) {
     sem_held[semId] = 1;
 
   }
+
   sem_held[semId] = 0;
   wakeup(sem_chain+semId);
 }
