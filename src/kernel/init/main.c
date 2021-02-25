@@ -30,6 +30,7 @@
 
 /* AJOUTER */
 #include <sys/sem.h>
+#include <sys/barrier.h>
 
 /**
  * @brief Forks the current process.
@@ -124,7 +125,10 @@ PUBLIC void kmain(void)
 	mm_init();
 	pm_init();
 	fs_init();
+
 	init_sem();
+	init_barrier();
+
 
 	chkout(DEVID(TTY_MAJOR, 0, CHRDEV));
 	kprintf(KERN_INFO "kout is now initialized");

@@ -23,6 +23,7 @@
 #include <sys/times.h>
 #include <sys/wait.h>
 #include <sys/sem.h>
+#include <sys/barrier.h>
 #include <stdio.h>
 #include <signal.h>
 #include <stdlib.h>
@@ -683,6 +684,74 @@ int semaphore_test3(void)
 }
 
 /*============================================================================*
+ *                             Barrier Test                                *
+ *============================================================================*/
+
+/**
+ * @brief Creates a barrier.
+ */
+#define BARRIER_CREATE(a, b) (assert(((a) = barget(b)) >= 0))
+
+/**
+ * @brief Initializes a barrier.
+ */
+#define BARRIER_INIT(a, b) (assert(barctl((a), SETVAL, (b)) == 0))
+
+/**
+ * @brief Destroys a barrier.
+ */
+#define BARRIER_DESTROY(x) (assert(barctl((x), IPC_RMID, 0) == 0))
+
+/**
+ * @brief Reach a barrier.
+ */
+#define BARRIER_REACH(x) (assert(barop((x), 1) == 0))
+
+
+/**
+ * @brief Barrier test
+ *
+ * @details Checking that barrier is working
+ *
+ * @returns Zero if passed on test, and non-zero otherwise.
+ */
+int barrier_test0(void)
+{
+	pid_t pid;                  /* Process ID.              */
+	int barrier;                /* Barrier.                 */
+	const int NR_PROCESS = 5;  /* Number of child process   */
+
+	/* Create barrier. */
+	BARRIER_CREATE(barrier, 1);
+
+	/* Initialize barrier. */
+	BARRIER_INIT(barrier, NR_PROCESS+1);
+
+	for (int i = 0; i < NR_PROCESS; i++) {
+		pid = fork();
+		if (pid == 0) {
+			printf("Process arrived %d\n", i);
+			BARRIER_REACH(barrier);
+			printf("Process leave %d\n", i);
+			_exit(EXIT_SUCCESS);
+		} else {
+			if (pid < 0) {
+				return (-1);
+			}
+		}
+	}
+
+	printf("Main process arrived\n");
+	BARRIER_REACH(barrier);
+	printf("Main process leave\n");
+
+
+	BARRIER_DESTROY(barrier);
+
+	return (0);
+}
+
+/*============================================================================*
  *                                FPU test                                    *
  *============================================================================*/
 
@@ -839,12 +908,16 @@ int main(int argc, char **argv)
 		else if (!strcmp(argv[i], "ipc"))
 		{
 			printf("Interprocess Communication Tests\n");
+			printf("Semaphore Tests\n");
 			printf("  producer consumer [%s]\n",
 				(!semaphore_test3()) ? "PASSED" : "FAILED");
 			printf(" stress producer consumer [%s]\n",
 				(!semaphore_test2()) ? "PASSED" : "FAILED");
 			/*printf(" stress producer consumer with several consumers [%s]\n",
 				(!semaphore_test1()) ? "PASSED" : "FAILED");*/
+			printf("Barrier Tests\n");
+			printf(" barrier test [%s]\n",
+				(!barrier_test0()) ? "PASSED" : "FAILED");
 		}
 
 		/* FPU test. */

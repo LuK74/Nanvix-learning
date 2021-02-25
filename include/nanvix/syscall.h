@@ -31,7 +31,7 @@
 	#include <utime.h>
 
 	/* Number of system calls. */
-	#define NR_SYSCALLS 51
+	#define NR_SYSCALLS 54
 
 	/* System call numbers. */
 	#define NR_alarm     0
@@ -85,6 +85,9 @@
  	#define NR_semget   48
  	#define NR_semctl   49
  	#define NR_semop    50
+	#define NR_barget   51
+ 	#define NR_barctl   52
+ 	#define NR_barop    53
 
 #ifndef _ASM_FILE_
 
@@ -264,9 +267,20 @@
 	 */
 	EXTERN int sys_gticks(void);
 
-	EXTERN int sys_semget(void);
-	EXTERN int sys_semctl(void);
-	EXTERN int sys_semop(void);
+	/*
+	* Semaphore syscalls
+	*/
+	EXTERN int sys_semget(unsigned key);
+	EXTERN int sys_semctl(int semid, int cmd, int val);
+	EXTERN int sys_semop(int semid, int op);
+
+
+	/*
+	* Barrier syscalls
+	*/
+	EXTERN int sys_barget(unsigned key);
+	EXTERN int sys_barctl(int barid, int cmd, int val);
+	EXTERN int sys_barop(int barid, int op);
 
 #endif /* _ASM_FILE_ */
 

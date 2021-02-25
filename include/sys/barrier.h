@@ -17,8 +17,8 @@
  * along with Nanvix. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef SEM_H_
-#define SEM_H_
+#ifndef BARRIER_H_
+#define BARRIER_H_
 
 
 
@@ -29,47 +29,46 @@
 	 * @brief Comand values for semaphores.
 	 */
 	/**@{*/
-	#define GETVAL   0 /**< Returns the value of a semaphore. */
-	#define SETVAL   1 /**< Sets the value of a semaphore.    */
-	#define IPC_RMID 3 /**< Destroys a semaphore.            */
+	#define GETVAL   0 /**< Returns the value of a barrier. */
+	#define SETVAL   1 /**< Sets the value of a barrrier.    */
+	#define IPC_RMID 3 /**< Destroys a barrier.            */
 	/**@}*/
 
-	#define SEM_MAX 128
-	#define MAX_PROCESS_WAITING 128
+	#define BARRIER_MAX 128
+	#define MAX_PROCESS_WAITING_B 128
 
 
-	struct semaphore {
+	struct barrier {
 			// Key associated to the semaphore
 			unsigned key;
 
 			// Id needed to apply operation on it
 			unsigned int id;
 
-			// Ressources
-			int ressources;
+			// Requested process
+			int request;
 
-			// Flag
-			// -1 : Semaphore not initialized
-			// 0 : Semaphore initialized
-			// 1 : Semaphore currently used by a process for an atomic function
+			// Flag allowing to know if a barrier is currently used in an atomic function (reach for exemple)
+			// -1 : Barrier not initialized
+			// 0 : No flag
+			// 1 : Is used by a process in an atomic function
 			int flag;
 
-			// Array containing every process waiting on the semaphore
-			struct process * waitingProcess[MAX_PROCESS_WAITING];
+			// Array containing every process waiting on the barrier
+			struct process * waitingProcess[MAX_PROCESS_WAITING_B];
 	};
 
-	EXTERN struct semaphore semtab[SEM_MAX];
+	EXTERN struct barrier bartab[BARRIER_MAX];
 
 	/* Forward definitions. */
-	extern int semget(unsigned);
-	extern int semctl(int, int, int);
-	extern int semop(int, int);
+	extern int barget(unsigned);
+	extern int barctl(int, int, int);
+	extern int barop(int, int);
 
-	extern int create(int);
-	extern void down(int);
-	extern void up(int);
-	extern void destroy(int);
-	extern void init_sem();
+	extern int createB(int);
+	extern void reach(int);
+	extern void destroyB(int);
+	extern void init_barrier();
 
-#endif /* SEM_H_ */
+#endif /* BARRIER_H_ */
 
