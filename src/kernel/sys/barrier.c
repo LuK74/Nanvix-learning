@@ -110,6 +110,9 @@ PUBLIC void reach(int barId) {
       bartab[barId].waitingProcess[i] = NULL;
     }
 
+    bartab[barId].flag = 0;
+    wakeup(bar_chain+barId);
+
   } else {
 
     // If request is greater than 0

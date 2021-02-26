@@ -31,7 +31,7 @@ C_SRC = $(wildcard *.c)           \
       $(wildcard stropts/*.c)     \
       $(wildcard sys/times/*.c)   \
       $(wildcard sys/sem/*.c)     \
-      $(wildcard sys/barrier/*.c)     \
+      $(wildcard sys/barrier/*.c) \
       $(wildcard sys/stat/*.c)    \
       $(wildcard sys/utsname/*.c) \
       $(wildcard sys/wait/*.c)    \

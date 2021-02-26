@@ -418,103 +418,15 @@ static int sched_test3(void)
 }    
 
 /**
- * @brief Producer-Consumer problem with semaphores.
+ * @brief NYI
  *
- * @details Reproduces consumer-producer scenario using semaphores.
- * with severals producers and consumers
+ * @details NYI
  *
  * @returns Zero if passed on test, and non-zero otherwise.
  */
 int semaphore_test1(void)
 {
-	pid_t pid;                  /* Process ID.              */
-	int buffer_fd;              /* Buffer file descriptor.  */
-	int empty;                  /* Empty positions.         */
-	int full;                   /* Full positions.          */
-	int mutex;                  /* Mutex.                   */
-	const int BUFFER_SIZE = 32; /* Buffer size.             */
-	const int NR_ITEMS = 512;   /* Number of items to send. */
-	const int NR_PRODUCERS = 7; /* Number of producers */
-	const int NR_CONSUMERS = 7; /* Number of consumers */
-
-	/* Consumers and Producers must be equal in order for 
-	this test to work */
-	assert(NR_PRODUCERS == NR_CONSUMERS);
-
-	/* Create buffer.*/
-	buffer_fd = open("buffer", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	if (buffer_fd < 0)
-		return (-1);
-
-	/* Create semaphores. */
-	SEM_CREATE(mutex, 1);
-	SEM_CREATE(empty, 2);
-	SEM_CREATE(full, 3);
-
-	/* Initialize semaphores. */
-	SEM_INIT(full, 0);
-	SEM_INIT(empty, BUFFER_SIZE);
-	SEM_INIT(mutex, 1);
-
-	for (int i = 0; i < NR_PRODUCERS+NR_CONSUMERS; i++) {
-		if (i%2 == 0) {
-			pid = fork();
-			if (pid == 0) {
-				//printf("Lets put");
-				for (int item = i*512; item < NR_ITEMS + i*512; item++)
-				{
-					SEM_DOWN(empty);
-					SEM_DOWN(mutex);
-
-					PUT_ITEM(buffer_fd, item);
-
-					SEM_UP(mutex);
-					SEM_UP(full);
-				}
-				//printf("Items put");
-				exit(EXIT_SUCCESS);
-			} else {
-				if (pid < 0) return (-1);
-			}			
-		} else {
-			pid = fork();
-			if (pid == 0) {
-				int collected = 0;
-				int item;
-				do
-				{
-					SEM_DOWN(full);
-					SEM_DOWN(mutex);
-
-					GET_ITEM(buffer_fd, item);
-					collected++;
-					//printf("One item removed %d\n", item);
-
-					SEM_UP(mutex);
-					SEM_UP(empty);
-				} while (collected != 512);
-				printf("Items removed\n");
-				_exit(EXIT_SUCCESS);
-			} else {
-				if (pid < 0) return (-1);	
-			}
-		}
-	}
-
-	for (int i = 0; i < NR_CONSUMERS + NR_PRODUCERS; i++) {
-		wait(NULL);
-		printf("Process %d ended\n", i);
-	}
- 		
-	/* Destroy semaphores. */
-	SEM_DESTROY(mutex);
-	SEM_DESTROY(empty);
-	SEM_DESTROY(full);
-
-	close(buffer_fd);
-	unlink("buffer");
-
-	return (0);
+	return(0);
 }                                                
 
 /**

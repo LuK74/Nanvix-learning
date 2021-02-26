@@ -113,7 +113,7 @@ PUBLIC void up(int semId) {
         semtab[semId].waitingProcess[i] = semtab[semId].waitingProcess[i+1];
       }
 
-      if (i < SEM_MAX) {
+      if (i >= MAX_PROCESS_WAITING - 1) {
         semtab[semId].waitingProcess[i] = NULL;
       }
 

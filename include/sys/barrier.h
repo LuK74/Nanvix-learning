@@ -20,10 +20,8 @@
 #ifndef BARRIER_H_
 #define BARRIER_H_
 
-
-
-
 	#include <nanvix/const.h>
+	#include <nanvix/config.h>
 
 	/**
 	 * @brief Comand values for semaphores.
@@ -35,7 +33,7 @@
 	/**@}*/
 
 	#define BARRIER_MAX 128
-	#define MAX_PROCESS_WAITING_B 128
+	#define MAX_PROCESS_WAITING_B PROC_MAX
 
 
 	struct barrier {

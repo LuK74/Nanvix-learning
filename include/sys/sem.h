@@ -20,10 +20,8 @@
 #ifndef SEM_H_
 #define SEM_H_
 
-
-
-
 	#include <nanvix/const.h>
+	#include <nanvix/config.h>
 
 	/**
 	 * @brief Comand values for semaphores.
@@ -35,7 +33,7 @@
 	/**@}*/
 
 	#define SEM_MAX 128
-	#define MAX_PROCESS_WAITING 128
+	#define MAX_PROCESS_WAITING PROC_MAX
 
 
 	struct semaphore {
