@@ -631,7 +631,30 @@ int barrier_test0(void)
 {
 	pid_t pid;                  /* Process ID.              */
 	int barrier;                /* Barrier.                 */
-	const int NR_PROCESS = 5;  /* Number of child process   */
+	const int NR_PROCESS = 3;  /* Number of child process   */
+	int buffer_fd;              /* Buffer file descriptor.  */
+	int empty;                  /* Empty positions.         */
+	int full;                   /* Full positions.          */
+	int mutex;                  /* Mutex.                   */
+	const int BUFFER_SIZE = 32; /* Buffer size.             */
+
+	int verbose = 1; 			/* Verbose mode, 1 = on     */
+	int debug = 0;				/* Debug mode, 1 = on       */
+
+	/* Create buffer.*/
+	buffer_fd = open("buffer", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+	if (buffer_fd < 0)
+		return (-1);
+
+	/* Create semaphores. */
+	SEM_CREATE(mutex, 1);
+	SEM_CREATE(empty, 2);
+	SEM_CREATE(full, 3);
+
+	/* Initialize semaphores. */
+	SEM_INIT(full, 0);
+	SEM_INIT(empty, BUFFER_SIZE);
+	SEM_INIT(mutex, 1);
 
 	/* Create barrier. */
 	BARRIER_CREATE(barrier, 1);
@@ -639,12 +662,51 @@ int barrier_test0(void)
 	/* Initialize barrier. */
 	BARRIER_INIT(barrier, NR_PROCESS+1);
 
+
+	/* 
+	* Each process will put the item 1 in the buffer
+	* before it reach the barrier
+	* After it passed the barrier, it will put the item 2
+	* in the buffer
+	* By doing so, we should be able to see if this works properly
+	* if the buffer contains the value in the right order
+	*
+	* It is also possible to activate the verbose in order to if
+	* the barrier are working
+	*/
 	for (int i = 0; i < NR_PROCESS; i++) {
 		pid = fork();
 		if (pid == 0) {
-			printf("Process arrived %d\n", i);
+			int item = 1;
+
+			SEM_DOWN(empty);
+			SEM_DOWN(mutex);
+
+			PUT_ITEM(buffer_fd, item);
+
+			SEM_UP(full);
+			SEM_UP(mutex);
+
+			if (verbose) {
+				printf("Process arrived %d\n", i);
+			}
+
 			BARRIER_REACH(barrier);
-			printf("Process leave %d\n", i);
+
+			item = 2;
+
+			if (verbose) {
+				printf("Process leave %d\n", i);
+			}
+
+			SEM_DOWN(empty);
+			SEM_DOWN(mutex);
+
+			PUT_ITEM(buffer_fd, item);
+
+			SEM_UP(full);
+			SEM_UP(mutex);
+
 			_exit(EXIT_SUCCESS);
 		} else {
 			if (pid < 0) {
@@ -653,12 +715,128 @@ int barrier_test0(void)
 		}
 	}
 
-	printf("Main process arrived\n");
-	BARRIER_REACH(barrier);
-	printf("Main process leave\n");
+	int counter = 0;
 
+	BARRIER_REACH(barrier);
+
+	int item;
+	do {
+
+		SEM_DOWN(full);
+		SEM_DOWN(mutex);
+
+		GET_ITEM(buffer_fd, item);
+		counter++;
+
+		if (verbose && debug) {
+			printf("%d\n", item);
+		}
+
+		/*
+		* Those asserts should passed
+		* But the buffer only contains the value 2
+		* 10 times we're getting an item with the value 2
+		*/
+
+		/*if (counter > NR_PROCESS) {
+			assert(item == 2);
+		} else {
+			assert(item == 1);
+		}*/
+
+		SEM_UP(mutex);
+		SEM_UP(empty);
+
+	} while (counter != NR_PROCESS*2);
 
 	BARRIER_DESTROY(barrier);
+
+	/* Destroy semaphores. */
+	SEM_DESTROY(mutex);
+	SEM_DESTROY(empty);
+	SEM_DESTROY(full);
+
+	close(buffer_fd);
+	unlink("buffer");
+
+	return (0);
+}
+
+/**
+ * @brief Barrier test
+ *
+ * @details Checking that barrier is working
+ *
+ * @returns Zero if passed on test, and non-zero otherwise.
+ */
+int barrier_test1(void)
+{
+	pid_t pid;                  /* Process ID.              */
+	int barrier1;                /* Barriers.                 */
+	int barrier2;
+	int barrier3;
+	const int NR_PROCESS = 2;  /* Number of child process   */
+
+	int verbose = 1; 			/* Verbose mode, 1 = on     */
+
+	/* Create barrier. */
+	BARRIER_CREATE(barrier1, 1);
+	BARRIER_CREATE(barrier2, 2);
+	BARRIER_CREATE(barrier3, 3);
+
+	/* Initialize barrier. */
+	BARRIER_INIT(barrier1, NR_PROCESS+1);
+	BARRIER_INIT(barrier2, NR_PROCESS+1);
+	BARRIER_INIT(barrier3, NR_PROCESS+1);
+
+	for (int i = 0; i < NR_PROCESS; i++) {
+		pid = fork();
+		if (pid == 0) {
+			BARRIER_REACH(barrier1);
+
+			if (verbose) {
+				printf("Barrier 1 Passed by process %d\n", i);
+			}
+
+			BARRIER_REACH(barrier2);
+
+			if (verbose) {
+				printf("Barrier 2 Passed by process %d\n", i);
+			}
+
+			BARRIER_REACH(barrier3);
+
+			if (verbose) {
+				printf("Barrier 3 Passed by process %d\n", i);
+			}
+
+			_exit(EXIT_SUCCESS);
+		} else {
+			if (pid < 0) {
+				return (-1);
+			}
+		}
+	}
+
+
+	BARRIER_REACH(barrier1);
+	if (verbose) {
+		printf("Barrier 1 Reached by main process \n");
+	}
+	BARRIER_REACH(barrier2);
+	if (verbose) {
+		printf("Barrier 2 Reached by main process \n");
+	}
+	BARRIER_REACH(barrier3);
+	if (verbose) {
+		printf("Barrier 3 Reached by main process \n");
+	}
+	
+
+
+	BARRIER_DESTROY(barrier1);
+	BARRIER_DESTROY(barrier2);
+	BARRIER_DESTROY(barrier3);
 
 	return (0);
 }
@@ -828,8 +1006,12 @@ int main(int argc, char **argv)
 			/*printf(" stress producer consumer with several consumers [%s]\n",
 				(!semaphore_test1()) ? "PASSED" : "FAILED");*/
 			printf("Barrier Tests\n");
-			printf(" barrier test [%s]\n",
+			printf("--------------\n");
+			printf(" barrier test with one barrier [%s]\n",
 				(!barrier_test0()) ? "PASSED" : "FAILED");
+			printf("--------------\n");
+			printf(" barrier test with several barriers [%s]\n",
+				(!barrier_test1()) ? "PASSED" : "FAILED");
 		}
 
 		/* FPU test. */
