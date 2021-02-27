@@ -20,54 +20,52 @@
 #ifndef SEM_H_
 #define SEM_H_
 
-	#include <nanvix/const.h>
-	#include <nanvix/config.h>
+#include <nanvix/const.h>
+#include <nanvix/config.h>
 
-	/**
-	 * @brief Comand values for semaphores.
-	 */
-	/**@{*/
-	#define GETVAL   0 /**< Returns the value of a semaphore. */
-	#define SETVAL   1 /**< Sets the value of a semaphore.    */
-	#define IPC_RMID 3 /**< Destroys a semaphore.            */
-	/**@}*/
+/**
+ * @brief Comand values for semaphores.
+ */
+/**@{*/
+#define GETVAL 0   /**< Returns the value of a semaphore. */
+#define SETVAL 1   /**< Sets the value of a semaphore.    */
+#define IPC_RMID 3 /**< Destroys a semaphore.            */
+/**@}*/
 
-	#define SEM_MAX 128
-	#define MAX_PROCESS_WAITING PROC_MAX
+#define SEM_MAX 128
+#define MAX_PROCESS_WAITING PROC_MAX
 
+struct semaphore {
+  // Key associated to the semaphore
+  unsigned key;
 
-	struct semaphore {
-			// Key associated to the semaphore
-			unsigned key;
+  // Id needed to apply operation on it
+  unsigned int id;
 
-			// Id needed to apply operation on it
-			unsigned int id;
+  // Ressources
+  int ressources;
 
-			// Ressources
-			int ressources;
+  // Flag
+  // -1 : Semaphore not initialized
+  // 0 : Semaphore initialized
+  // 1 : Semaphore currently used by a process for an atomic function
+  int flag;
 
-			// Flag
-			// -1 : Semaphore not initialized
-			// 0 : Semaphore initialized
-			// 1 : Semaphore currently used by a process for an atomic function
-			int flag;
+  // Array containing every process waiting on the semaphore
+  struct process *waitingProcess[MAX_PROCESS_WAITING];
+};
 
-			// Array containing every process waiting on the semaphore
-			struct process * waitingProcess[MAX_PROCESS_WAITING];
-	};
+EXTERN struct semaphore semtab[SEM_MAX];
 
-	EXTERN struct semaphore semtab[SEM_MAX];
+/* Forward definitions. */
+extern int semget(unsigned);
+extern int semctl(int, int, int);
+extern int semop(int, int);
 
-	/* Forward definitions. */
-	extern int semget(unsigned);
-	extern int semctl(int, int, int);
-	extern int semop(int, int);
-
-	extern int create(int);
-	extern void down(int);
-	extern void up(int);
-	extern void destroy(int);
-	extern void init_sem();
+extern int create(int);
+extern void down(int);
+extern void up(int);
+extern void destroy(int);
+extern void init_sem();
 
 #endif /* SEM_H_ */
-

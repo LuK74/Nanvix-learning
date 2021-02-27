@@ -1,15 +1,15 @@
-#include <sys/sem.h>
-#include <nanvix/pm.h>
 #include <nanvix/const.h>
+#include <nanvix/pm.h>
 #include <signal.h>
+#include <sys/sem.h>
 
 /*
-* This function is used to create semaphore or get
-* semaphore that already exists
-* So it will return the id of the semaphore (newly created
-* or not)
-* If the barrier couldn't be created, it will return -1
-*/
+ * This function is used to create semaphore or get
+ * semaphore that already exists
+ * So it will return the id of the semaphore (newly created
+ * or not)
+ * If the barrier couldn't be created, it will return -1
+ */
 PUBLIC int sys_semget(unsigned key) {
   // Looking for semaphore with the given key
   for (int i = 0; i < SEM_MAX; i++) {
@@ -26,7 +26,8 @@ PUBLIC int sys_semget(unsigned key) {
   int semId = create(0);
   semtab[semId].key = key;
 
-  if(semtab[semId].flag == -1) return -1;
+  if (semtab[semId].flag == -1)
+    return -1;
 
   return semId;
 }

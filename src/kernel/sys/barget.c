@@ -1,15 +1,15 @@
-#include <sys/barrier.h>
-#include <nanvix/pm.h>
 #include <nanvix/const.h>
+#include <nanvix/pm.h>
 #include <signal.h>
+#include <sys/barrier.h>
 
 /*
-* This function is used to create barrier or get
-* barrier that already exists
-* So it will return the id of the barrier (newly created
-* or not)
-* If the barrier couldn't be created, it will return -1
-*/
+ * This function is used to create barrier or get
+ * barrier that already exists
+ * So it will return the id of the barrier (newly created
+ * or not)
+ * If the barrier couldn't be created, it will return -1
+ */
 PUBLIC int sys_barget(unsigned key) {
 
   // Looking for barrier with the given key
@@ -27,7 +27,8 @@ PUBLIC int sys_barget(unsigned key) {
   int barId = createB(0);
   bartab[barId].key = key;
 
-  if(bartab[barId].flag == -1) return -1;
+  if (bartab[barId].flag == -1)
+    return -1;
 
   return barId;
 }
