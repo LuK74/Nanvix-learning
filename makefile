@@ -40,7 +40,7 @@ export LD = $(TARGET)-ld
 export AR = $(TARGET)-ar
 
 # Random number for chaos.
-export KEY = 13
+export KEY = '"Banana"'
 
 # Toolchain configuration.
 export CFLAGS    = -g -I $(INCDIR)

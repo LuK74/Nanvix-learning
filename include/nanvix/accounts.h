@@ -21,7 +21,8 @@
 #define ACCOUNTS_H_
 
 	#include <sys/types.h>
-	
+	#include <string.h>
+
 	/**
 	 * @brief Maximum length for a user name.
 	 */
@@ -42,7 +43,29 @@
 		uid_t uid;                   /**< User's ID.       */
 		gid_t gid;                   /**< User's group ID. */
 	};
-	
+
+
+	void generateRandomKey(char * key) {
+		int lfsr = 0xACE1u;
+		//unsigned bit; 
+		unsigned period = 0;
+		printf("%s", key); 
+
+		//int keyLength = strlen(key);
+
+		do { /* taps: 16 14 13 11; characteristic polynomial: x^16 + x^14 + x^13 + x^11 + 1 */
+			//bit  = ((lfsr >> 0) ^ (lfsr >> 2) ^ (lfsr >> 3) ^ (lfsr >> 5) ^ (lfsr >> 8)) & 1;
+
+			/*for (int i = 0; i < keyLength; i++) {
+				key[i] = key[i] ^ (bit & 0xFF);
+			}*/
+
+			lfsr =  (lfsr >> 1) | ((lfsr & 0x1) << 31);  
+			++period;
+		} 
+		while(lfsr != 0xACE1u);
+	}
+
 	/**
 	 * @brief Encrypts a string.
 	 * 
@@ -50,15 +73,16 @@
 	 * @param n   String length.
 	 * @param key Encrypting key.
 	 */
-	extern inline void account_encrypt(char *str, size_t n, int key)
+	extern inline void account_encrypt(char *str, size_t n, char * key)
 	{
-		for (size_t i = 0; i < n; i++)
-		{
-			if (str[i] == '\0')
-				return;
-			
-			str[i] += key;
+		printf("%s", key);
+		int keyLength = strlen(key);
+		generateRandomKey(key);
+
+		for (size_t i = 0; i < n; i++) {
+			str[i] = str[i] ^ key[i%keyLength];
 		}
+		
 	}
 	
 	/**
@@ -68,15 +92,16 @@
 	 * @param n   String length.
 	 * @param key Encrypting key.
 	 */
-	extern inline void account_decrypt(char *str, size_t n, int key)
+	extern inline void account_decrypt(char *str, size_t n, char * key)
 	{
-		for (size_t i = 0; i < n; i++)
-		{
-			if (str[i] == '\0')
-				return;
-			
-			str[i] -= key;
+		printf("%s", key);
+		int keyLength = strlen(key);
+		generateRandomKey(key);
+
+		for (size_t i = 0; i < n; i++) {
+			str[i] = str[i] ^ key[i%keyLength];
 		}
+		
 	}
 
 #endif /* ACCOUNTS_H_ */
