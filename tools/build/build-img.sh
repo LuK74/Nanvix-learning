@@ -33,6 +33,10 @@ ROOTGID=0
 NOOBUID=1
 NOOBUID=1
 
+# My credentials
+LUKUID=2
+LUKGID=2
+
 # macOS compatibility stuff
 if [ "x$(uname -rv | grep Darwin)" != "x" ];
 then
@@ -96,6 +100,7 @@ function passwords
 
 	bin/useradd $file root root $ROOTGID $ROOTUID
 	bin/useradd $file noob noob $NOOBUID $NOOBUID
+	bin/useradd $file luk luk $LUKUID $LUKGID
 
 	# Let's care about security...
 	if [ "$EDUCATIONAL_KERNEL" == "0" ]; then

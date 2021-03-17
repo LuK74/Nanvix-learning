@@ -19,6 +19,7 @@
 #
 
 # Conflicts.
+.PHONY: attackTools
 .PHONY: cat
 .PHONY: chgrp
 .PHONY: chmod
@@ -45,8 +46,13 @@
 .PHONY: sleep
 
 # Builds everything.
-all: cat chgrp chmod chown cp echo kill ln login ls mv nice pwd rm stat sync \
+all: attackTools cat chgrp chmod chown cp echo kill ln login ls mv nice pwd rm stat sync \
 	 touch tsh ps clear nim sleep
+
+# Builds cat.
+attackTools: 
+	$(CC) $(CFLAGS) $(LDFLAGS) attackTools/*.c -o $(UBINDIR)/attackTools $(LIBDIR)/libc.a
+	
 
 # Builds cat.
 cat: 
